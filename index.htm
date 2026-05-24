@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LEVEL UP - Consulta de Jugador</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0d0e15;
+            --container-bg: #1a1c2e;
+            --border-color: #3f446b;
+            --accent-color: #38b000;
+            --text-color: #ffffff;
+            --text-muted: #8b9bb4;
+            --heart-color: #ff0054;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'VT323', monospace;
+            font-size: 1.5rem;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .game-container {
+            background-color: var(--container-bg);
+            border: 4px solid var(--border-color);
+            border-radius: 8px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+        }
+
+        /* Pantallas de Estado */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Tipografías Especiales de Videojuego */
+        .arcade-title {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.8rem;
+            text-align: center;
+            color: #ffbe0b;
+            text-shadow: 3px 3px #c77d00;
+            margin-bottom: 25px;
+        }
+
+        .status-message {
+            text-align: center;
+            font-size: 1.8rem;
+            color: var(--text-muted);
+            margin-top: 20px;
+        }
+
+        /* Header del Perfil */
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 25px;
+            border-bottom: 4px dashed var(--border-color);
+            padding-bottom: 25px;
+            margin-bottom: 25px;
+        }
+
+        .avatar-frame {
+            width: 100px;
+            height: 100px;
+            border: 4px solid #ff0054;
+            background-color: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            image-rendering: pixelated;
+        }
+
+        .avatar-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-info {
+            flex-grow: 1;
+        }
+
+        .player-name {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 1.2rem;
+            color: #00b4d8;
+            margin-bottom: 8px;
+        }
+
+        .player-tag {
+            color: var(--text-muted);
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+
+        /* Sistema de Vidas (Corazones) */
+        .health-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+        }
+
+        .hearts {
+            color: var(--heart-color);
+            font-size: 2rem;
+            letter-spacing: 2px;
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+
+        /* Items Equipados */
+        .inventory {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .item-slot {
+            background: #2a2d44;
+            border: 2px solid var(--border-color);
+            padding: 5px 15px;
+            border-radius: 4px;
+            font-size: 1.2rem;
+            color: #ffb703;
+        }
+
+        /* Cuadrícula de Retos / Estaciones */
+        .stations-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .station-card {
+            background: #22253f;
+            border: 2px solid var(--border-color);
+            padding: 15px;
+            border-radius: 6px;
+            transition: transform 0.2s;
+        }
+
+        .station-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .station-name {
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.8rem;
+            color: #9d4edd;
+            margin-bottom: 10px;
+        }
+
+        .station-status {
+            font-weight: bold;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 1.2rem;
+        }
+
+        /* Modificadores de Estado de Retos */
+        .status-pendiente { color: #ffb703; background: rgba(255, 183, 3, 0.1); }
+        .status-superado { color: #38b000; background: rgba(56, 176, 0, 0.1); }
+        .status-failed { color: #ff0054; background: rgba(255, 0, 84, 0.1); }
+
+        .station-details {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            border-top: 1px dashed rgba(255,255,255,0.1);
+            padding-top: 5px;
+        }
+
+        /* Loader Animado */
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid var(--border-color);
+            border-top: 5px solid #ffbe0b;
+            border-radius: 50%;
+            margin: 30px auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h1 class="arcade-title">=== LEVEL UP ===</h1>
+
+        <div id="screen-loading" class="screen active">
+            <div class="spinner"></div>
+            <p class="status-message">CONECTANDO AL SERVIDOR DEL JUEGO...</p>
+        </div>
+
+        <div id="screen-error" class="screen">
+            <p class="status-message" style="color: #ff0054;" id="error-text">ERROR: Jugador no encontrado.</p>
+        </div>
+
+        <div id="screen-dashboard" class="screen">
+            
+            <div class="profile-header">
+                <div class="avatar-frame">
+                    <img id="player-avatar" src="" alt="Avatar">
+                </div>
+                <div class="player-info">
+                    <div id="player-name" class="player-name">CARGANDO...</div>
+                    <div id="player-tag" class="player-tag">TAG: --</div>
+                    <div class="health-bar">
+                        <span>HP:</span>
+                        <span id="player-hearts" class="hearts">❤️❤️❤️</span>
+                        <span id="player-numeric-hp" style="color: var(--text-muted); font-size: 1.1rem;">(3/3)</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 1.3rem; margin-bottom: 10px; color: #00b4d8;">ITEMS EQUIPADOS:</h3>
+            <div class="inventory">
+                <div class="item-slot">🎒 Slot 1: <span id="player-item1">Ninguno</span></div>
+                <div class="item-slot">🎒 Slot 2: <span id="player-item2">Ninguno</span></div>
+            </div>
+
+            <h3 style="font-size: 1.3rem; margin-bottom: 10px; color: #00b4d8;">ESTADO DE LAS ESTACIONES:</h3>
+            <div class="stations-grid" id="stations-container">
+                </div>
+
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN: Pega aquí la URL de tu Web App de Google Apps Script
+        const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyR8GtZEiDxvjKSGbH9wG6obXtW_-xDS_foh81hQ7RMmRG23W6jM13EE38VVLdTagCs/exec";
+
+        // Función para cambiar de pantalla de forma limpia
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Función constructora de corazones según salud actual
+        function buildHearts(currentHp, maxHp) {
+            let hp = Math.max(0, parseInt(currentHp) || 0);
+            let corazones = "❤️".repeat(hp);
+            if (hp === 0) corazones = "💀 ELIMINADO";
+            return `${corazones}`;
+        }
+
+        // Lógica Principal de Carga de Datos
+        async function fetchPlayerData() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tag = urlParams.get('tag');
+
+            if (!tag) {
+                document.getElementById('error-text').innerText = "ERROR: Escanea un código QR válido o añade ?tag=GAMERTAG a la URL.";
+                showScreen('screen-error');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${WEB_APP_URL}?tag=${encodeURIComponent(tag)}`);
+                const data = await response.json();
+
+                if (!data.success) {
+                    document.getElementById('error-text').innerText = `ERROR: ${data.error}`;
+                    showScreen('screen-error');
+                    return;
+                }
+
+                // Renderizar datos del perfil del jugador
+                const perfil = data.perfil;
+                document.getElementById('player-avatar').src = perfil.avatarUrl || "https://api.dicebear.com/7.x/pixel-art/svg?seed=player";
+                document.getElementById('player-name').innerText = perfil.nombre;
+                document.getElementById('player-tag').innerText = `TAG: ${perfil.gamerTag}`;
+                
+                // Setear sistema de salud
+                document.getElementById('player-hearts').innerHTML = buildHearts(perfil.vidasActuales, perfil.vidasIniciales);
+                document.getElementById('player-numeric-hp').innerText = `(${perfil.vidasActuales}/${perfil.vidasIniciales} Vidas)`;
+
+                // Setear items del inventario
+                document.getElementById('player-item1').innerText = perfil.item1 || "Vacío";
+                document.getElementById('player-item2').innerText = perfil.item2 || "Vacío";
+
+                // Renderizar las 6 estaciones de retos
+                const container = document.getElementById('stations-container');
+                container.innerHTML = ""; 
+
+                data.estaciones.forEach(est => {
+                    let statusClass = "status-pendiente";
+                    let estadoTexto = est.estado.toUpperCase();
+                    
+                    if (estadoTexto.includes("SUPERADO") || estadoTexto.includes("LOGRADO")) {
+                        statusClass = "status-superado";
+                    } else if (estadoTexto.includes("NO") || estadoTexto.includes("FALLIDO")) {
+                        statusClass = "status-failed";
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = "station-card";
+                    card.innerHTML = `
+                        <div class="station-name">${est.mundo}</div>
+                        <span class="station-status ${statusClass}">${est.estado}</span>
+                        <div class="station-details">
+                            <div>🎒 Item: ${est.itemUsado}</div>
+                            <div>⚠️ Alerta: ${est.penalizacion}</div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+
+                showScreen('screen-dashboard');
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('error-text').innerText = "ERROR: No se pudo conectar con la base de datos.";
+                showScreen('screen-error');
+            }
+        }
+
+        window.onload = fetchPlayerData;
+    </script>
+</body>
+</html>
